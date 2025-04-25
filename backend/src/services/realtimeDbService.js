@@ -1,4 +1,3 @@
- 
 // src/services/realtimeDbService.js
 const { realtimeDb } = require('../config/firebase');
 
@@ -135,4 +134,58 @@ class RealtimeDbService {
       ref = ref.limitToLast(limitToLast);
     }
     
-    const snapshot
+    const snapshot = await ref.once('value');
+    const results = {};
+    
+    snapshot.forEach((childSnapshot) => {
+      results[childSnapshot.key] = childSnapshot.val();
+    });
+    
+    return results;
+  }
+
+  /**
+   * Count children at a path
+   * @param {string} path - Path to count
+   * @returns {Promise<number>} Count of children
+   */
+  async countChildren(path) {
+    const snapshot = await this.getRef(path).once('value');
+    let count = 0;
+    
+    snapshot.forEach(() => {
+      count++;
+    });
+    
+    return count;
+  }
+
+  /**
+   * Transaction to safely update a value
+   * @param {string} path - Path to update
+   * @param {function} updateFn - Function to transform current value
+   * @returns {Promise<object>} Result with committed status and value
+   */
+  async transaction(path, updateFn) {
+    const ref = this.getRef(path);
+    return ref.transaction(updateFn);
+  }
+
+  /**
+   * Get all keys at a path
+   * @param {string} path - Path to get keys from
+   * @returns {Promise<string[]>} Array of keys
+   */
+  async getKeys(path) {
+    const snapshot = await this.getRef(path).once('value');
+    const keys = [];
+    
+    snapshot.forEach((childSnapshot) => {
+      keys.push(childSnapshot.key);
+    });
+    
+    return keys;
+  }
+}
+
+module.exports = RealtimeDbService;
